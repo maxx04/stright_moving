@@ -29,13 +29,18 @@
 #include "my_image_converter.h"
 
 // Include opencv2
-  #include <opencv2/imgproc/imgproc.hpp>
-  #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/videoio.hpp>
 
-  // Include CvBridge, Image Transport, Image msg
-  #include <image_transport/image_transport.h>
-  #include <cv_bridge/cv_bridge.h>
-  
+// Include CvBridge, Image Transport, Image msg
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+
+uint frames = 0;
+
+int calculate(cv::Mat& image, int32_t sqns); //TODO bringen in header
 
 // bool imageConverter::Convert( sensor_msgs::Image& msg, imageFormat format )
 // {
@@ -45,7 +50,7 @@
 typedef uchar3 PixelType;
 
 // Convert
-bool Convert( sensor_msgs::Image& msg, imageFormat format, PixelType* imageGPU )
+bool Convert(sensor_msgs::Image &msg, imageFormat format, PixelType *imageGPU)
 {
 
 	/*
@@ -76,30 +81,51 @@ bool Convert( sensor_msgs::Image& msg, imageFormat format, PixelType* imageGPU )
 
 	msg.encoding     = imageFormatToEncoding(format);
 	msg.is_bigendian = false;
-*/	
+*/
 	return true;
 }
 
 // aquire and publish camera frame
-void image_readCB(const sensor_msgs::Image& message_holder)
+void image_readCB(const sensor_msgs::Image &message_holder)
 {
+	uint width = 0, height = 0;
 	// Bild konvertieren
 	cv_bridge::CvImagePtr cv_ptr;
-    try
-    {
+	try
+	{
 		// assign opencv image pointer
-      cv_ptr = cv_bridge::toCvCopy(message_holder, sensor_msgs::image_encodings::BGR8);
-    }
-    catch (cv_bridge::Exception& e)
-    {
-      ROS_ERROR("cv_bridge exception: %s", e.what());
-      return;
-    }
+		cv_ptr = cv_bridge::toCvCopy(message_holder, sensor_msgs::image_encodings::BGR8);
+	}
+	catch (cv_bridge::Exception &e)
+	{
+		ROS_ERROR("cv_bridge exception: %s", e.what());
+		return;
+	}
 
-	cv::Point text_point(30,30);
+	if (width == 0 & height == 0)
+	{
 
-	// Draw a black background behind text
- 	   cv::rectangle(cv_ptr->image, text_point, text_point + cv::Point(100,20) , CV_RGB(0,0,0), cv::LineTypes::FILLED);
+		// width = message_holder.width;
+		// height = message_holder.height;
+		// //--- INITIALIZE VIDEOWRITER
+		
+		// int codec = cv::VideoWriter::fourcc('X', '2', '6', '4'); // select desired codec (must be available at runtime)
+		// double fps = 30.0;										 // framerate of the created video stream
+		// std::string filename = "./video_fu.mp4";					 // name of the output video file
+		// bool isColor = false;
+		// writer.open(filename, cv::CAP_GSTREAMER, fps, cv::Size(width, height), isColor);
+		// // check if we succeeded
+		// if (!writer.isOpened())
+		// {
+		// 	ROS_ERROR("Could not open the output video file for write\n");
+		// 	return; //TODO exception hinzufuegen
+		// }
+	}
+
+	int32_t sqns = message_holder.header.seq;
+
+	frames++;
+	calculate(cv_ptr->image, sqns);
 
 	// Convert( message_holder,  format, &imageGPU );
 
@@ -107,10 +133,8 @@ void image_readCB(const sensor_msgs::Image& message_holder)
 	// Bild spechern zu spaeterem Vergleich
 	// Twist ausgeben
 
-	int32_t sqns =  message_holder.header.seq;
-
-	if (sqns%50 == 0 )
-		ROS_INFO("image sequence is: %d",sqns); 
+	if (sqns % 50 == 0)
+		ROS_INFO("image sequence is: %d", sqns);
 	return;
 }
 
@@ -118,38 +142,36 @@ void image_readCB(const sensor_msgs::Image& message_holder)
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "twist_calc");
- 
+
 	ros::NodeHandle nh;
-//	ros::NodeHandle private_nh("~");
+	//	ros::NodeHandle private_nh("~");
 
 	/*
 	 * retrieve parameters
 	 */
-	
+
 	// private_nh.param<std::string>("device", camera_device, camera_device);
-	
+
 	ROS_INFO("starting twist calculation");
 
 	std_msgs::Float64 twist;
 
-	ros::Subscriber image_subscriber = nh.subscribe("jetbot_camera/raw", 1, image_readCB); 
- 
-	//publish a force command computed by this controller; 
-    ros::Publisher twist_publisher = nh.advertise<std_msgs::Float64>("twist_value", 1);
+	ros::Subscriber image_subscriber = nh.subscribe("jetbot_camera/raw", 1, image_readCB);
 
+	//publish a force command computed by this controller;
+	ros::Publisher twist_publisher = nh.advertise<std_msgs::Float64>("twist_value", 1);
 
 	/*
 	 * start publishing video frames
 	 */
-	while( ros::ok() )
+	while (ros::ok() && frames < 10)
 	{
 		//if( raw_pub->getNumSubscribers() > 0 )
-			twist.data = 3.61;
-			twist_publisher.publish(twist);
+		twist.data = 3.61;
+		twist_publisher.publish(twist);
 
 		ros::spinOnce();
 	}
 
 	return 0;
 }
-

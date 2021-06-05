@@ -149,8 +149,10 @@ include_directories(/usr/include/gstreamer-1.0
 add_definitions(-DROS1)
 
 # camera node
-add_executable(twist_calc src/twist_calc.cpp)
-target_link_libraries(twist_calc ${catkin_LIBRARIES} ${OpenCV_INCLUDE_DIRS})
+add_executable(twist_calc 
+src/twist_calc.cpp
+src/calculate.cpp)
+target_link_libraries(twist_calc ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
