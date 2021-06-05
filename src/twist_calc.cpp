@@ -87,6 +87,7 @@ void image_readCB(const sensor_msgs::Image& message_holder)
 	cv_bridge::CvImagePtr cv_ptr;
     try
     {
+		// assign opencv image pointer
       cv_ptr = cv_bridge::toCvCopy(message_holder, sensor_msgs::image_encodings::BGR8);
     }
     catch (cv_bridge::Exception& e)
