@@ -1,0 +1,6 @@
+<launch>
+
+	<node name="jetbot_camera" pkg="jetbot_ros" type="jetbot_camera"/> 
+<!--	<node name="twist_calc" pkg="stright_moving" type="twist_calc" /> -->
+
+</launch>
