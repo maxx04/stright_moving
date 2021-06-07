@@ -10,10 +10,11 @@ project(stright_moving)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 
-find_package(catkin REQUIRED COMPONENTS
+find_package(catkin REQUIRED COMPONENTS ## components doppel siehe unten
     roscpp
     sensor_msgs
     std_msgs
+    message_generation
     cv_bridge
     image_transport
   )
@@ -56,11 +57,12 @@ set(OpenCV_DIR=/usr/local/lib/cmake/opencv4)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+ add_message_files(
+   FILES
+   KeyPointsVec.msg
+   KeyPoint.msg
+   Point2f.msg
+ )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -77,10 +79,10 @@ set(OpenCV_DIR=/usr/local/lib/cmake/opencv4)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -123,6 +125,7 @@ catkin_package(
     CATKIN_DEPENDS roscpp
                    sensor_msgs
                    std_msgs
+                   message_generation
                    cv_bridge
                    image_transport
   )
@@ -148,12 +151,6 @@ include_directories(/usr/include/gstreamer-1.0
 /usr/lib/x86_64-linux-gnu/glib-2.0/include/)
 add_definitions(-DROS1)
 
-# camera node
-add_executable(twist_calc 
-src/twist_calc.cpp
-src/calculate.cpp)
-target_link_libraries(twist_calc ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/direction_cntrl.cpp
@@ -169,6 +166,12 @@ target_link_libraries(twist_calc ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/direction_cntrl_node.cpp)
 
+# camera node
+add_executable(find_keypoints_node 
+src/find_keypoints_node.cpp 
+src/find_keypoints_node.h 
+src/find_keypoints.cpp)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -183,6 +186,7 @@ target_link_libraries(twist_calc ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+target_link_libraries(find_keypoints_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 #############
 ## Install ##

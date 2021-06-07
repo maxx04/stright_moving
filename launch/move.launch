@@ -1,6 +1,6 @@
 <launch>
 
 	<node name="jetbot_camera" pkg="jetbot_ros" type="jetbot_camera"/> 
-<!--	<node name="twist_calc" pkg="stright_moving" type="twist_calc" /> -->
+<!--	<node name="find_keypoints_node" pkg="stright_moving" type="find_keypoints_node" /> -->
 
 </launch>

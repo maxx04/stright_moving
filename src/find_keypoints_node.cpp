@@ -22,70 +22,26 @@
 
 #include <ros/ros.h>
 
+#include <opencv2/features2d.hpp>
+
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
-#include <std_msgs/Float64.h>
 
-#include "my_image_converter.h"
-
-// Include opencv2
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/core.hpp>
-#include <opencv2/videoio.hpp>
+#include <stright_moving/KeyPointsVec.h>
 
 // Include CvBridge, Image Transport, Image msg
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 
+#include "find_keypoints_node.h"
+
 uint frames = 0;
+stright_moving::KeyPointsVec keypoints_msg;
+cv::Ptr<cv::Feature2D> orb;
 
-int calculate(cv::Mat& image, int32_t sqns); //TODO bringen in header
+int calculate(cv::Mat& image, int32_t sqns); //HACK sind die Globals  keypoints_msg good?
 
-// bool imageConverter::Convert( sensor_msgs::Image& msg, imageFormat format )
-// {
-// 	return Convert(msg, format, ImageGPU());
-// }
-
-typedef uchar3 PixelType;
-
-// Convert
-bool Convert(sensor_msgs::Image &msg, imageFormat format, PixelType *imageGPU)
-{
-
-	/*
-	if( !mInputCPU || !imageGPU || mWidth == 0 || mHeight == 0 || mSizeInput == 0 || mSizeOutput == 0 )
-		return false;
-	
-	// perform colorspace conversion into the desired encoding
-	// in this direction, we reverse use of input/output pointers
-	if( CUDA_FAILED(cudaConvertColor(imageGPU, InternalFormat, mInputGPU, format, mWidth, mHeight)) )
-	{
-		ROS_ERROR("failed to convert %ux%u image (from %s to %s) with CUDA", mWidth, mHeight, imageFormatToStr(InternalFormat), imageFormatToStr(format));
-		return false;
-	}
-
-	// calculate size of the msg
-	const size_t msg_size = imageFormatSize(format, mWidth, mHeight);
-
-	// allocate msg storage
-	msg.data.resize(msg_size);
-
-	// copy the converted image into the msg
-	memcpy(msg.data.data(), mInputCPU, msg_size);
-
-	// populate metadata
-	msg.width  = mWidth;
-	msg.height = mHeight;
-	msg.step   = (mWidth * imageFormatDepth(format)) / 8;
-
-	msg.encoding     = imageFormatToEncoding(format);
-	msg.is_bigendian = false;
-*/
-	return true;
-}
-
-// aquire and publish camera frame
+// receive camera frame
 void image_readCB(const sensor_msgs::Image &message_holder)
 {
 	uint width = 0, height = 0;
@@ -102,7 +58,7 @@ void image_readCB(const sensor_msgs::Image &message_holder)
 		return;
 	}
 
-	if (width == 0 & height == 0)
+	if (width == 0 & height == 0) // /HACK bei dem ersem aufruf
 	{
 
 		// width = message_holder.width;
@@ -123,18 +79,13 @@ void image_readCB(const sensor_msgs::Image &message_holder)
 	}
 
 	int32_t sqns = message_holder.header.seq;
-
 	frames++;
+
+	/// find keypoints
 	calculate(cv_ptr->image, sqns);
 
-	// Convert( message_holder,  format, &imageGPU );
-
-	// Differenz zu gespeichertem Bild auswerten
-	// Bild spechern zu spaeterem Vergleich
-	// Twist ausgeben
-
-	if (sqns % 50 == 0)
-		ROS_INFO("image sequence is: %d", sqns);
+	if (sqns % 100 == 0)
+		ROS_INFO("image sequence is about: %d", sqns);
 	return;
 }
 
@@ -151,24 +102,24 @@ int main(int argc, char **argv)
 	 */
 
 	// private_nh.param<std::string>("device", camera_device, camera_device);
-
-	ROS_INFO("starting twist calculation");
-
-	std_msgs::Float64 twist;
+	
+	ROS_INFO("starting keypoints calculation");
 
 	ros::Subscriber image_subscriber = nh.subscribe("jetbot_camera/raw", 1, image_readCB);
 
-	//publish a force command computed by this controller;
-	ros::Publisher twist_publisher = nh.advertise<std_msgs::Float64>("twist_value", 1);
+	//publish a twist_value computed by this controller;
+	ros::Publisher keypoints_publisher = nh.advertise<stright_moving::KeyPointsVec>("image_keypoints", 1);
+
+	keypoints_msg.img_keypoints.resize(MAX_POINTS);
+	orb = cv::ORB::create(MAX_POINTS,1.2,8,31,0,2,cv::ORB::HARRIS_SCORE,31,20);
 
 	/*
 	 * start publishing video frames
 	 */
-	while (ros::ok() && frames < 10)
+	while (ros::ok()) // && frames < 10)
 	{
-		//if( raw_pub->getNumSubscribers() > 0 )
-		twist.data = 3.61;
-		twist_publisher.publish(twist);
+//		if( keypoints_publisher.getNumSubscribers() > 0 ) // OPTI Leistung pptimieren
+			keypoints_publisher.publish(keypoints_msg); // 
 
 		ros::spinOnce();
 	}
