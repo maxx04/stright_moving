@@ -20,7 +20,6 @@
 using namespace cv;
 using namespace std;
 
-extern bool has_keypoints;
 extern stright_moving::KeyPointsVec keypoints_msg;
 extern Ptr<Feature2D> orb;
 
@@ -44,15 +43,9 @@ int find_keypoints(cv::Mat& image, int32_t sqns)
 	//HACK nur notwendige punkte in Zukunft benutzen
 	//undistortPoints(key_points, key_points_ud, cameraMatrix, distCoeffs); 
 
+  keypoints_msg.img_keypoints.clear();
 
-  if (keypoints_1.size() < 1) 
-  {
-    has_keypoints = false;
-    return -1;
-  }
-
-  has_keypoints = true;
-
+	// automatic initialization
   keypoints_msg.keypoints_count = keypoints_1.size();
 
 	// fuelle keypunkte

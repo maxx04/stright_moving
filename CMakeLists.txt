@@ -172,6 +172,10 @@ src/find_keypoints_node.cpp
 src/find_keypoints_node.h 
 src/find_keypoints.cpp)
 
+add_executable(calc_tensors_node 
+src/calc_tensors_node.cpp 
+src/find_keypoints_node.h)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -187,6 +191,7 @@ src/find_keypoints.cpp)
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(find_keypoints_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(calc_tensors_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 #############
 ## Install ##

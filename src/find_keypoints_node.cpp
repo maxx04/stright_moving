@@ -36,15 +36,17 @@
 #include "find_keypoints_node.h"
 
 uint frames = 0;
+bool has_keypoints = false;
 stright_moving::KeyPointsVec keypoints_msg;
 cv::Ptr<cv::Feature2D> orb;
 
-int calculate(cv::Mat& image, int32_t sqns); //HACK sind die Globals  keypoints_msg good?
+int find_keypoints(cv::Mat& image, int32_t sqns); //HACK sind die Globals  keypoints_msg good?
 
 // receive camera frame
 void image_readCB(const sensor_msgs::Image &message_holder)
 {
 	uint width = 0, height = 0;
+	has_keypoints = false;
 	// Bild konvertieren
 	cv_bridge::CvImagePtr cv_ptr;
 	try
@@ -82,7 +84,7 @@ void image_readCB(const sensor_msgs::Image &message_holder)
 	frames++;
 
 	/// find keypoints
-	calculate(cv_ptr->image, sqns);
+	find_keypoints(cv_ptr->image, sqns);
 
 	if (sqns % 100 == 0)
 		ROS_INFO("image sequence is about: %d", sqns);
@@ -92,7 +94,7 @@ void image_readCB(const sensor_msgs::Image &message_holder)
 // node main loop
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "twist_calc");
+	ros::init(argc, argv, "find_keypoints_node");
 
 	ros::NodeHandle nh;
 	//	ros::NodeHandle private_nh("~");
@@ -118,7 +120,7 @@ int main(int argc, char **argv)
 	 */
 	while (ros::ok()) // && frames < 10)
 	{
-//		if( keypoints_publisher.getNumSubscribers() > 0 ) // OPTI Leistung pptimieren
+		if( has_keypoints ) //keypoints_publisher.getNumSubscribers() > 0 ) // OPTI Leistung pptimieren
 			keypoints_publisher.publish(keypoints_msg); // 
 
 		ros::spinOnce();
