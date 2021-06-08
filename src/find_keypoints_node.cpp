@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 	/*
 	 * start publishing video frames
 	 */
-	while (ros::ok()) // && frames < 10)
+	while (ros::ok()) // && frames < 50)
 	{
 		if( has_keypoints ) //keypoints_publisher.getNumSubscribers() > 0 ) // OPTI Leistung pptimieren
 			keypoints_publisher.publish(keypoints_msg); // 

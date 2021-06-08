@@ -10,6 +10,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/features2d.hpp>
+#include <opencv2/video/tracking.hpp>
 #include <iostream>
 #include <stdio.h>
 
@@ -24,67 +25,107 @@ extern bool has_keypoints;
 extern stright_moving::KeyPointsVec keypoints_msg;
 extern Ptr<Feature2D> orb;
 
-int find_keypoints(cv::Mat& image, int32_t sqns)
+cv::Mat last_image;
+vector<Point2f> prev_points; // vorherige punkte
+
+int find_keypoints(cv::Mat &image, int32_t sqns)
 {
-// find keypoints
 
-//uses FAST as of now, modify parameters as necessary
-	vector<KeyPoint> keypoints_1;
-//	vector<Point2f> key_points;
+  // find keypoints
 
-	//int fast_threshold = 20;
-	//bool nonmaxSuppression = true;
+  has_keypoints = false;
 
-	Mat descriptors1;
+  //uses FAST as of now, modify parameters as necessary
+  vector<KeyPoint> keypoints_1;
+  vector<Point2f> key_points;
 
-	orb->detectAndCompute(image, Mat(), keypoints_1, descriptors1);
+  //int fast_threshold = 20;
+  //bool nonmaxSuppression = true;
 
-	// KeyPoint::convert(keypoints_1, key_points, vector<int>());
+  Mat descriptors1, gray;
 
-	//HACK nur notwendige punkte in Zukunft benutzen
-	//undistortPoints(key_points, key_points_ud, cameraMatrix, distCoeffs); 
-
-
-  if (keypoints_1.size() < 1) 
+  if (prev_points.empty()) // fuer ersten anlauf
   {
-    has_keypoints = false;
+    cvtColor(image, gray, COLOR_BGR2GRAY); //OPTI
+
+    orb->detectAndCompute(gray, Mat(), keypoints_1, descriptors1);
+    KeyPoint::convert(keypoints_1, key_points, vector<int>());
+
+    prev_points = key_points;
+    gray.copyTo(last_image);
     return -1;
   }
 
+  // Terminate Kriterium fuer die LukasKande
+  TermCriteria termcrit = TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 30, 0.01);
+
+  Size winSize = Size(21, 21); // SubWindow fuer LukasKande
+
+  vector<uchar> status;           // status vom calcOpticalFlowPyrLK
+  vector<float> err;              // error vom calcOpticalFlowPyrLK
+  vector<Point2f> current_points; // aktuelle punkte
+
+  //	prev_points.clear();
+
+  cvtColor(image, gray, COLOR_BGR2GRAY); //OPTI
+
+  calcOpticalFlowPyrLK(last_image, gray, /*prev*/ prev_points, /*next*/ current_points,
+                       status, err, winSize, 5, termcrit, 0, 0.001);
+
+  prev_points = current_points;
+  gray.copyTo(last_image);
+
+  // fuelle keypunkte
+
+  stright_moving::KeyPoint kp; //OPTI keypoints direct konvertieren
+  
+
+  int i = 0; int count = 0;
+
+  for (Point2f p : current_points)
+  {
+    if (status[i++] == 1)
+    {
+      kp.pt.x = p.x;
+      kp.pt.y = p.y;
+
+      keypoints_msg.img_keypoints[count++] = kp;
+
+#ifdef DEBUG_KEYPOINTS
+      cv::drawMarker(image, p, cv::Scalar(0, 0, 255), cv::MARKER_CROSS, 10, 1);
+#endif
+
+    }
+    else
+    {
+
+    }
+  }
+
+  keypoints_msg.keypoints_count = --count;
+
+  keypoints_msg.img_keypoints.resize(count);
+
+#ifdef DEBUG_KEYPOINTS
+  char image_name[512];
+  sprintf(image_name, "./stright_moving/images/img-%08d.jpg", sqns);
+  cv::imwrite(image_name, image);
+#endif
+
   has_keypoints = true;
 
-  keypoints_msg.keypoints_count = keypoints_1.size();
-
-	// fuelle keypunkte
-
-  int i = 0;
-	for (KeyPoint p : keypoints_1)
-	{
-    keypoints_msg.img_keypoints[i].angle = p.angle;
-    keypoints_msg.img_keypoints[i].pt.x = p.pt.x;
-    keypoints_msg.img_keypoints[i].pt.y = p.pt.y;
-    keypoints_msg.img_keypoints[i].octave = p.octave;
-    keypoints_msg.img_keypoints[i].response = p.response;
-    keypoints_msg.img_keypoints[i].size = p.size;
-    keypoints_msg.img_keypoints[i].class_id = p.class_id;
-
-  #ifdef DEBUG_KEYPOINTS
-    cv::drawMarker(image, p.pt,  cv::Scalar(0, 0, 255), cv::MARKER_CROSS, 10, 1);
-  #endif
-
-    i++;
-	}
+  if (count < 1)
+  {
+    has_keypoints = false;
+    prev_points.clear(); // um startpointsneu initiieren
+    return -1;
+  }
 
   // draw keypoints
   // compare with old keypoints may be 2,3 or 5
   // find moving
-	// save keypoints for the next turn
-	// calculate twist
+  // save keypoints for the next turn
+  // calculate twist
 
-#ifdef DEBUG_KEYPOINTS
-  char image_name[512];
-	sprintf(image_name,"./stright_moving/images/img-%08d.jpg", sqns);
-	cv::imwrite(image_name, image); 
-#endif
-    return 0;
+  return 0;
 }
