@@ -63,8 +63,8 @@ void image_readCB(const sensor_msgs::Image &message_holder)
 	if (width == 0 & height == 0) // /HACK bei dem ersem aufruf
 	{
 
-		// width = message_holder.width;
-		// height = message_holder.height;
+		width = message_holder.width;
+		height = message_holder.height;
 		// //--- INITIALIZE VIDEOWRITER
 		
 		// int codec = cv::VideoWriter::fourcc('X', '2', '6', '4'); // select desired codec (must be available at runtime)
@@ -112,13 +112,17 @@ int main(int argc, char **argv)
 	//publish a twist_value computed by this controller;
 	ros::Publisher keypoints_publisher = nh.advertise<stright_moving::KeyPointsVec>("image_keypoints", 1);
 
-	keypoints_msg.img_keypoints.resize(MAX_POINTS);
-	orb = cv::ORB::create(MAX_POINTS,1.2,8,31,0,2,cv::ORB::HARRIS_SCORE,31,20);
+	keypoints_msg.img_keypoints.resize(MAX_KEYPOINTS);
+	orb = cv::ORB::create(MAX_KEYPOINTS,1.2,8,31,0,2,cv::ORB::HARRIS_SCORE,31,20);
 
 	/*
 	 * start publishing video frames
 	 */
-	while (ros::ok()) // && frames < 50)
+#ifdef DEBUG_KEYPOINTS
+	while (ros::ok() && frames < 50)
+#else
+	while (ros::ok()) 
+#endif
 	{
 		if( has_keypoints ) //keypoints_publisher.getNumSubscribers() > 0 ) // OPTI Leistung pptimieren
 			keypoints_publisher.publish(keypoints_msg); // 

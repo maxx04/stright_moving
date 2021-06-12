@@ -5,6 +5,8 @@
   @date Aug 24, 2016
 */
 
+#include <ros/ros.h>
+
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
@@ -51,6 +53,12 @@ int find_keypoints(cv::Mat &image, int32_t sqns)
     orb->detectAndCompute(gray, Mat(), keypoints_1, descriptors1);
     KeyPoint::convert(keypoints_1, key_points, vector<int>());
 
+    if (keypoints_1.size() < MIN_KEYPOINTS)
+    {
+      prev_points.clear();
+      return -1;
+    }
+
     prev_points = key_points;
     gray.copyTo(last_image);
     return -1;
@@ -78,9 +86,9 @@ int find_keypoints(cv::Mat &image, int32_t sqns)
   // fuelle keypunkte
 
   stright_moving::KeyPoint kp; //OPTI keypoints direct konvertieren
-  
 
-  int i = 0; int count = 0;
+  int i = 0;
+  int count = 0;
 
   for (Point2f p : current_points)
   {
@@ -94,30 +102,28 @@ int find_keypoints(cv::Mat &image, int32_t sqns)
 #ifdef DEBUG_KEYPOINTS
       cv::drawMarker(image, p, cv::Scalar(0, 0, 255), cv::MARKER_CROSS, 10, 1);
 #endif
-
-    }
-    else
-    {
-
     }
   }
 
-  keypoints_msg.keypoints_count = --count;
+  keypoints_msg.keypoints_count = count; // HACK count-1 ist nicht notwendig
 
   keypoints_msg.img_keypoints.resize(count);
 
 #ifdef DEBUG_KEYPOINTS
   char image_name[512];
-  sprintf(image_name, "./stright_moving/images/img-%08d.jpg", sqns);
-  cv::imwrite(image_name, image);
+  sprintf(image_name, "./src/stright_moving/images/img-%08d.jpg", sqns);
+  if (!cv::imwrite(image_name, image))
+  {
+    ROS_WARN("Cannt save to file %s", image_name);
+  }
 #endif
 
   has_keypoints = true;
 
-  if (count < 1)
+  if (count < MIN_KEYPOINTS)
   {
     has_keypoints = false;
-    prev_points.clear(); // um startpointsneu initiieren
+    prev_points.clear(); // um startpoints neu initiieren
     return -1;
   }
 

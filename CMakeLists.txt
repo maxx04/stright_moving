@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-set (CMAKE_CXX_STANDARD 11)
+# set (CMAKE_CXX_STANDARD 11)
 project(stright_moving)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -23,9 +23,9 @@ find_package(catkin REQUIRED COMPONENTS ## components doppel siehe unten
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(jetson-utils REQUIRED)
 find_package(CUDA REQUIRED)
-find_package(OpenCV 4 REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 
-set(OpenCV_DIR=/usr/local/lib/cmake/opencv4)
+#set(OpenCV_DIR=/usr/local/lib/cmake/opencv4)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
