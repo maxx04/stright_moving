@@ -5,6 +5,8 @@
   @date Aug 24, 2016
 */
 
+#include <ros/ros.h>
+
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
@@ -108,13 +110,16 @@ int find_keypoints(cv::Mat &image, int32_t sqns)
 
 #ifdef DEBUG_KEYPOINTS
   char image_name[512];
-  sprintf(image_name, "./stright_moving/images/img-%08d.jpg", sqns);
-  cv::imwrite(image_name, image);
+  sprintf(image_name, "./src/stright_moving/images/img-%08d.jpg", sqns);
+  if(!cv::imwrite(image_name, image))
+  {
+      ROS_WARN("Cannt save to file %s",image_name);
+  }
 #endif
 
   has_keypoints = true;
 
-  if (count < 1)
+  if (count < MIN_KEYPOINTS)
   {
     has_keypoints = false;
     prev_points.clear(); // um startpointsneu initiieren
