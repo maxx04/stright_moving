@@ -112,15 +112,9 @@ int find_keypoints(cv::Mat &image, int32_t sqns)
 #ifdef DEBUG_KEYPOINTS
   char image_name[512];
   sprintf(image_name, "./src/stright_moving/images/img-%08d.jpg", sqns);
-<<<<<<< HEAD
   if (!cv::imwrite(image_name, image))
   {
     ROS_WARN("Cannt save to file %s", image_name);
-=======
-  if(!cv::imwrite(image_name, image))
-  {
-      ROS_WARN("Cannt save to file %s",image_name);
->>>>>>> 547097e16b50b201cd7630d56451e335aa0fdd6d
   }
 #endif
 

@@ -1,7 +1,7 @@
 <launch>
 
 	<node name="jetbot_camera" pkg="jetbot_ros" type="jetbot_camera"/> 
-	<!-- <node name="find_keypoints_node" pkg="stright_moving" type="find_keypoints_node" /> -->
+	<node name="find_keypoints_node" pkg="stright_moving" type="find_keypoints_node" /> 
 	<node name="calc_tensors_node" pkg="stright_moving" type="calc_tensors_node" /> 
 
 </launch>
